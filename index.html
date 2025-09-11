@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIjustify - Smart AI Chat</title>
+<style>
+/* ===== RESET ===== */
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif; scroll-behavior:smooth; }
+body { background:#00e5ff; color:#00f5d4; overflow-x:hidden; }
+
+/* ===== ANIMATED BACKGROUND ===== */
+#ai-bg { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; background:#0a0a0f; }
+
+/* ===== LOADING SCREEN ===== */
+#loading-screen { position:fixed; top:0; left:0; width:100%; height:100%; display:flex; justify-content:center; align-items:center; z-index:1000; flex-direction: column; }
+#loading-screen h1 { color:#00f5d4; font-size:4rem; letter-spacing:5px; display:flex; }
+#loading-screen h1 span { opacity:0; transform:translateY(20px); display:inline-block; animation: fadeInUp 1s forwards; }
+#loading-screen h1 span:nth-child(1){animation-delay:0s;} #loading-screen h1 span:nth-child(2){animation-delay:0.1s;}
+#loading-screen h1 span:nth-child(3){animation-delay:0.2s;} #loading-screen h1 span:nth-child(4){animation-delay:0.3s;}
+#loading-screen h1 span:nth-child(5){animation-delay:0.4s;} #loading-screen h1 span:nth-child(6){animation-delay:0.5s;}
+#loading-screen h1 span:nth-child(7){animation-delay:0.6s;} #loading-screen h1 span:nth-child(8){animation-delay:0.7s;}
+#loading-screen h1 span:nth-child(9){animation-delay:0.8s;}
+@keyframes fadeInUp { to { opacity:1; transform:translateY(0); } }
+
+/* ===== NAVBAR ===== */
+.navbar { display:flex; justify-content:space-between; align-items:center; padding:20px 50px; position:fixed; width:100%; top:0; z-index:999; background:rgba(0, 0, 0, 0.8); backdrop-filter: blur(6px); opacity:0; transition: opacity 1s ease; }
+.logo { font-weight:bold; font-size:1.8rem; color:#00f5d4; text-shadow:0 0 5px #00f5d4; }
+.nav-links { list-style:none; display:flex; gap:25px; }
+.nav-links li a { text-decoration:none; color:inherit; font-size:1rem; transition:0.3s; }
+.nav-links li a:hover { color:#00bbf9; text-shadow:0 0 5px #00bbf9; }
+
+/* ===== MAIN CONTENT ===== */
+#main-content { opacity:0; transition: opacity 1s ease; scroll-snap-type: y mandatory; overflow-y: scroll; height:100vh; }
+section { min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:100px 20px; scroll-snap-align: start; transition: transform 0.8s ease; }
+section h2 { font-size:2rem; color:#00bbf9; text-shadow:0 0 4px #00bbf9; }
+section p { font-size:1rem; max-width:600px; line-height:1.5; color:#d9d9d9; }
+.messenger-btn { display:inline-block; margin-top:20px; padding:12px 28px; border-radius:30px; text-decoration:none; font-weight:bold; background:linear-gradient(90deg,#00f5d4,#00bbf9); color:#0a0a0f; box-shadow:0 0 15px #00f5d4; transition:0.3s; cursor:pointer; }
+.messenger-btn:hover { transform:scale(1.05); box-shadow:0 0 25px #00f5d4,0 0 35px #00bbf9; }
+
+/* ===== HERO PHONE MOCKUP ===== */
+#hero { position:relative; min-height:80vh; display:flex; justify-content:center; align-items:center; }
+.phone {
+  width:320px; height:640px; background:#0a0a0f; border-radius:50px; border:4px solid #00f5d4; box-shadow:0 0 40px rgba(0,245,212,0.6); display:flex; flex-direction:column; overflow:hidden; padding:15px; position:relative;
+}
+.phone-notch { height:30px; background:#111; border-radius:0 0 15px 15px; margin-bottom:10px; display:flex; justify-content:center; align-items:center; color:#888; font-size:0.8rem; }
+#chat-screen { flex:1; display:flex; flex-direction:column; gap:10px; overflow-y:auto; padding-bottom:15px; }
+.phone-input { height:50px; background:#111; border-radius:25px; display:flex; align-items:center; padding:0 15px; color:#888; margin-top:10px; }
+
+/* MESSAGE BUBBLES */
+#chat-screen div { animation:fadeIn 0.5s; border-radius:20px; padding:8px 12px; font-size:0.9rem; word-wrap:break-word; max-width:80%; }
+#chat-screen div.ai { align-self:flex-start; background:#00f5d4; color:#0a0a0f; }
+#chat-screen div.user { align-self:flex-end; background:#00bbf9; color:#0a0a0f; }
+@keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+/* ===== FLOATING MESSENGER ICON ===== */
+.messenger-float {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  z-index: 10000;
+}
+.messenger-text {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #00f5d4;
+  text-shadow: 0 0 8px #00f5d4;
+  animation: popText 1.5s infinite;
+}
+@keyframes popText {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+.messenger-float img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: none;
+  animation: pop 1.5s infinite;
+}
+@keyframes pop {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND -->
+<canvas id="ai-bg"></canvas>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <h1>
+    <span>A</span><span>I</span><span>j</span><span>u</span><span>s</span><span>t</span><span>i</span><span>f</span><span>y</span>
+  </h1>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+  <div class="logo">AIjustify</div>
+  <ul class="nav-links">
+    <li><a href="#home">Home</a></li>
+    <li><a href="#hero">Demo</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div id="main-content">
+
+  <section id="home">
+    <h2>Welcome to AIjustify</h2>
+    <p>Smart AI chat support with e-commerce automation, multilingual replies, and workflow customization.</p>
+    <a class="messenger-btn" href="https://m.me/YOUR_MESSENGER_LINK" target="_blank">Message Us</a>
+  </section>
+
+  <!-- HERO PHONE CHAT -->
+  <section id="hero">
+    <div class="phone">
+      <div class="phone-notch">AIjustify Chat</div>
+      <div id="chat-screen"></div>
+      <div class="phone-input">Type a message...</div>
+    </div>
+  </section>
+
+  <section id="about">
+    <h2>About Me</h2>
+    <p>I’m Justine, creator of AIjustify. I help businesses scale with intelligent AI chat automation that works 24/7.</p>
+  </section>
+
+  <section id="pricing">
+    <h2>Pricing</h2>
+    <p>Pro Plan: ₱2,899 / month | E-commerce Only: ₱999 / month</p>
+  </section>
+</div>
+
+<!-- FLOATING MESSENGER -->
+<div class="messenger-float" onclick="window.open('https://m.me/https://m.me/107798555753262?ref=AIJUSTIFY','_blank')">
+  <span class="messenger-text">Contact us here</span>
+  <img src="Images/messenger-logo-messenger-social-media-icon-free-png.png" alt="Messenger Logo">
+</div>
+
+
+
+
+
+<script>
+// ===== LOADING SCREEN =====
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loading-screen').style.opacity = '0';
+    setTimeout(()=>{document.getElementById('loading-screen').style.display='none';},800);
+    document.getElementById('main-content').style.opacity='1';
+    document.getElementById('navbar').style.opacity='1';
+  }, 2500);
+});
+
+// ===== ANIMATED BACKGROUND =====
+const canvas = document.getElementById('ai-bg');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const lines=[];
+for(let i=0;i<100;i++){lines.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,speed:Math.random()*0.5+0.2,length:Math.random()*100+50});}
+function animateBg(){
+  ctx.fillStyle='#0a0a0f'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  lines.forEach(l=>{
+    ctx.strokeStyle='rgba(0,245,212,0.3)'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.moveTo(l.x,l.y); ctx.lineTo(l.x,l.y+l.length); ctx.stroke();
+    l.y+=l.speed; if(l.y>canvas.height) l.y=-l.length;
+  });
+  requestAnimationFrame(animateBg);
+}
+animateBg();
+
+// ===== HERO CHAT MESSAGES =====
+const messages=[
+  {text:"Hello! How can I assist you today?",sender:"ai"},
+  {text:"I need help with my online orders.",sender:"user"},
+  {text:"Sure! I can track, automate replies, and more.",sender:"ai"},
+  {text:"Wow, that's amazing!",sender:"user"},
+  {text:"All done automatically 24/7. 🟢",sender:"ai"}
+];
+const chatScreen=document.getElementById('chat-screen'); let i=0;
+function showMessage(){
+  if(i>=messages.length) return;
+  const msg=messages[i]; const div=document.createElement('div');
+  div.textContent=msg.text; div.className=msg.sender;
+  chatScreen.appendChild(div); chatScreen.scrollTop=chatScreen.scrollHeight;
+  i++; setTimeout(showMessage,1200);
+}
+showMessage();
+</script>
+</body>
+</html>
